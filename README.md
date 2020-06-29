@@ -7,7 +7,7 @@ Use the following sample dataset for Training Images of Wine:<br/>
 https://s3.console.aws.amazon.com/s3/buckets/vis-search-custom-s3buckettraining-gi5xok98fvj3/data/ER-Video/?region=us-east-2&tab=overview
 
 Upload these directories and images to your training bucket that is created in the CFN step to a directory called 'data' such as:<br/>
-s3://<bucket-nmae>/data
+s3://#bucket-name#/data
 
 In the Jupyter Notebook, use the directory names or similar name to the following variable <br/>
 #Define some utility function<br/>
