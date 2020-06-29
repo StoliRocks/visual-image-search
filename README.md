@@ -1,6 +1,7 @@
 ## How does it work?
 
-Test Training Images of Wine can be downloaded from https://s3.console.aws.amazon.com/s3/buckets/vis-search-custom-s3buckettraining-gi5xok98fvj3/data/ER-Video/?region=us-east-2&tab=overview
+Test Training Images of Wine can be downloaded from:
+https://s3.console.aws.amazon.com/s3/buckets/vis-search-custom-s3buckettraining-gi5xok98fvj3/data/ER-Video/?region=us-east-2&tab=overview
 
 Each image for training generates a 2048 feature vector using a convolutional neural networks and gets stored into Amazon Elasticsearch KNN index
 
