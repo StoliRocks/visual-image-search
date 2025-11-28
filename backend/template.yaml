@@ -1,61 +1,73 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: 'backend
+Description: >
+  Visual Image Search Backend
 
-  Sample SAM Template for backend
+  SAM Template for the visual image search API using SageMaker and OpenSearch.
 
-  '
 Parameters:
   BucketName:
     Type: String
+    Description: S3 bucket containing the indexed images
   DomainName:
     Type: String
-  ElasticSearchURL:
+    Description: OpenSearch domain name
+  OpenSearchURL:
     Type: String
+    Description: OpenSearch domain endpoint URL
   SagemakerEndpoint:
     Type: String
+    Description: SageMaker endpoint name for feature extraction
+
 Globals:
   Function:
     Timeout: 60
     MemorySize: 512
+    Runtime: python3.12
+    Architectures:
+      - x86_64
+    Tracing: Active
+    LoggingConfig:
+      LogFormat: JSON
+      ApplicationLogLevel: INFO
   Api:
     Cors:
-      AllowMethods: '''*'''
-      AllowHeaders: '''*'''
-      AllowOrigin: '''*'''
+      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+
 Resources:
-  PostFetchSimilarPhotosLambda:
+  ImageSearchFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://stvwhite-projects-virginia.s3.amazonaws.com/function.zip
+      CodeUri: lambda/
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Description: Finds similar images using ML-based feature extraction
       Environment:
         Variables:
-          ES_ENDPOINT:
-            Ref: ElasticSearchURL
-          SM_ENDPOINT:
-            Ref: SagemakerEndpoint
+          ES_ENDPOINT: !Ref OpenSearchURL
+          SM_ENDPOINT: !Ref SagemakerEndpoint
       Policies:
-      - Version: '2012-10-17'
-        Statement:
-        - Sid: AllowSagemakerInvokeEndpoint
-          Effect: Allow
-          Action:
-          - sagemaker:InvokeEndpoint
-          Resource:
-          - Fn::Sub: arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/${SagemakerEndpoint}
-      - Version: '2012-10-17'
-        Statement:
-        - Sid: AllowESS
-          Effect: Allow
-          Action:
-          - es:*
-          Resource:
-          - Fn::Sub: arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*
-      - S3ReadPolicy:
-          BucketName:
-            Ref: BucketName
+        - Version: '2012-10-17'
+          Statement:
+            - Sid: AllowSagemakerInvokeEndpoint
+              Effect: Allow
+              Action:
+                - sagemaker:InvokeEndpoint
+              Resource:
+                - !Sub arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/${SagemakerEndpoint}
+        - Version: '2012-10-17'
+          Statement:
+            - Sid: AllowOpenSearch
+              Effect: Allow
+              Action:
+                - es:ESHttpGet
+                - es:ESHttpPost
+                - es:ESHttpHead
+              Resource:
+                - !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*
+        - S3ReadPolicy:
+            BucketName: !Ref BucketName
       Events:
         PostURL:
           Type: Api
@@ -67,20 +79,24 @@ Resources:
           Properties:
             Path: /postImage
             Method: post
+        OptionsURL:
+          Type: Api
+          Properties:
+            Path: /postURL
+            Method: options
+        OptionsImage:
+          Type: Api
+          Properties:
+            Path: /postImage
+            Method: options
+
 Outputs:
   ImageSimilarityApi:
-    Description: API Gateway endpoint URL for Prod stage for fetchPhoto function
-    Value:
-      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
-  PostFetchSimilarPhotosLambda:
-    Description: Hello World Lambda Function ARN
-    Value:
-      Fn::GetAtt:
-      - PostFetchSimilarPhotosLambda
-      - Arn
-  PostFetchSimilarPhotosLambdaIamRole:
-    Description: Implicit IAM Role created for Hello World function
-    Value:
-      Fn::GetAtt:
-      - PostFetchSimilarPhotosLambda
-      - Arn
+    Description: API Gateway endpoint URL for Prod stage
+    Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+  ImageSearchFunctionArn:
+    Description: Image Search Lambda Function ARN
+    Value: !GetAtt ImageSearchFunction.Arn
+  ImageSearchFunctionRole:
+    Description: IAM Role created for Image Search function
+    Value: !GetAtt ImageSearchFunctionRole.Arn

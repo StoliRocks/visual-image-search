@@ -1,5 +1,7 @@
-pip>=20.0.2
-numpy
-pandas
-Pillow
-tensorflow==2.1.0
+# SageMaker inference dependencies
+# Compatible with Python 3.10+
+
+numpy>=1.24.0,<2.0.0
+pandas>=2.0.0
+Pillow>=10.0.0
+tensorflow>=2.15.0,<2.17.0
